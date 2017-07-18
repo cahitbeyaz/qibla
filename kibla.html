@@ -4,7 +4,7 @@
 <head>
   <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
   <meta charset="utf-8">
-  <title>Simple Polylines</title>
+  <title>Places Searchbox</title>
   <style>
     /* Always set the map height explicitly to define the size of the div
        * element that contains the map. */
@@ -20,56 +20,197 @@
       margin: 0;
       padding: 0;
     }
+
+    #description {
+      font-family: Roboto;
+      font-size: 15px;
+      font-weight: 300;
+    }
+
+    #infowindow-content .title {
+      font-weight: bold;
+    }
+
+    #infowindow-content {
+      display: none;
+    }
+
+    #map #infowindow-content {
+      display: inline;
+    }
+
+    .pac-card {
+      margin: 10px 10px 0 0;
+      border-radius: 2px 0 0 2px;
+      box-sizing: border-box;
+      -moz-box-sizing: border-box;
+      outline: none;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      background-color: #fff;
+      font-family: Roboto;
+    }
+
+    #pac-container {
+      padding-bottom: 12px;
+      margin-right: 12px;
+    }
+
+    .pac-controls {
+      display: inline-block;
+      padding: 5px 11px;
+    }
+
+    .pac-controls label {
+      font-family: Roboto;
+      font-size: 13px;
+      font-weight: 300;
+    }
+
+    #pac-input {
+      background-color: #fff;
+      font-family: Roboto;
+      font-size: 15px;
+      font-weight: 300;
+      margin-left: 12px;
+      padding: 0 11px 0 13px;
+      text-overflow: ellipsis;
+      width: 400px;
+    }
+
+    #pac-input:focus {
+      border-color: #4d90fe;
+    }
+
+    #title {
+      color: #fff;
+      background-color: #4d90fe;
+      font-size: 25px;
+      font-weight: 500;
+      padding: 6px 12px;
+    }
+
+    #target {
+      width: 345px;
+    }
   </style>
 </head>
 
 <body>
+  <input id="pac-input" class="controls" type="text" placeholder="Address eg: Mecca">
   <div id="map"></div>
   <script>
-    // This example creates a 2-pixel-wide red polyline showing the path of William
-    // Kingsford Smith's first trans-Pacific flight between Oakland, CA, and
-    // Brisbane, Australia.
+    // This example adds a search box to a map, using the Google Place Autocomplete
+    // feature. People can enter geographical searches. The search box will return a
+    // pick list containing a mix of places and predicted search terms.
 
-    function initMap() {
+    // This example requires the Places library. Include the libraries=places
+    // parameter when you first load the API. For example:
+    // <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places">
 
-      var src = { lat: 41.122069, lng: 29.003988 };
-      var dst = { lat: 21.422485, lng: 39.826162 };
+    function initAutocomplete() {
+      var src = { lat: 21.423154, lng: 39.826074 };
+      var dst = { lat: 21.422495, lng: 39.826172 };
+
       var map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 20,
         center: src,
+        zoom: 18,
         mapTypeId: 'satellite'
       });
 
-      var flightPlanCoordinates = [
-        src, dst
-      ];
+      // Create the search box and link it to the UI element.
+      var input = document.getElementById('pac-input');
+      var searchBox = new google.maps.places.SearchBox(input);
+      map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+
+      // Bias the SearchBox results towards current map's viewport.
+      map.addListener('bounds_changed', function () {
+        searchBox.setBounds(map.getBounds());
+      });
 
 
-      //flightPath.setMap(map);
-        var flightPath = new google.maps.Polyline({
-          path: flightPlanCoordinates,
-          strokeColor: '#f00',
-          strokeOpacity: 2.0,
-          strokeWeight: 3,
-          fit:true
-        });
-
-
-
-      map.addListener('center_changed', function () {
-        // 3 seconds after the center of the map has changed, pan back to the
-        // marker.
-        src.lat = map.getCenter().lat();
+      var flightPath = new google.maps.Polyline({
+        //path: flightPlanCoordinates,
+        strokeColor: '#f00',
+        strokeOpacity: 2.0,
+        strokeWeight: 3,
+        fit: true
+      });
+      src.lat = map.getCenter().lat();
         src.lng = map.getCenter().lng();
         var newPoints = [dst, src];
         flightPath.setPath(newPoints);
         flightPath.setMap(map);
+    map.addListener('center_changed', function () {
+      src.lat = map.getCenter().lat();
+        src.lng = map.getCenter().lng();
+        newPoints = [dst, src];
+        flightPath.setPath(newPoints);
+        flightPath.setMap(map);
+    
+    });
+
+
+      var markers = [];
+      // Listen for the event fired when the user selects a prediction and retrieve
+      // more details for that place.
+      searchBox.addListener('places_changed', function () {
+
+        var places = searchBox.getPlaces();
+
+        if (places.length == 0) {
+          return;
+        }
+
+        // Clear out the old markers.
+        markers.forEach(function (marker) {
+          marker.setMap(null);
+        });
+        markers = [];
+
+        // For each place, get the icon, name and location.
+        var bounds = new google.maps.LatLngBounds();
+        places.forEach(function (place) {
+          if (!place.geometry) {
+            console.log("Returned place contains no geometry");
+            return;
+          }
+          var icon = {
+            url: place.icon,
+            size: new google.maps.Size(71, 71),
+            origin: new google.maps.Point(0, 0),
+            anchor: new google.maps.Point(17, 34),
+            scaledSize: new google.maps.Size(25, 25)
+          };
+
+          // Create a marker for each place.
+          markers.push(new google.maps.Marker({
+            map: map,
+            icon: icon,
+            title: place.name,
+            position: place.geometry.location
+          }));
+
+          if (place.geometry.viewport) {
+            // Only geocodes have viewport.
+            bounds.union(place.geometry.viewport);
+          } else {
+            bounds.extend(place.geometry.location);
+          }
+        });
+        map.fitBounds(bounds);
       });
+
+
+
+
+
+      // 3 seconds after the center of the map has changed, pan back to the
+      // marker.
+
     }
   </script>
-  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBaSr7uXyo1P6hLx34ByZqYZA2a5rfEVjI&callback=initMap">
-
-  </script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCzVzgsgQlz9CrFRBF0Lvp5hiVaYh3Ix3s&libraries=places&callback=initAutocomplete"
+    async defer></script>
 </body>
 
 </html>
