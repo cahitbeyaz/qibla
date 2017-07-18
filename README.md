@@ -1,2 +1,2 @@
-# kibla
+# qibla
 Easy, secure kibla application
