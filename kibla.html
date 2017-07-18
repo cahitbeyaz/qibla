@@ -1,55 +1,75 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
-    <meta charset="utf-8">
-    <title>Simple Polylines</title>
-    <style>
-      /* Always set the map height explicitly to define the size of the div
+
+<head>
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+  <meta charset="utf-8">
+  <title>Simple Polylines</title>
+  <style>
+    /* Always set the map height explicitly to define the size of the div
        * element that contains the map. */
-      #map {
-        height: 100%;
-      }
-      /* Optional: Makes the sample page fill the window. */
-      html, body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="map"></div>
-    <script>
 
-      // This example creates a 2-pixel-wide red polyline showing the path of William
-      // Kingsford Smith's first trans-Pacific flight between Oakland, CA, and
-      // Brisbane, Australia.
+    #map {
+      height: 100%;
+    }
+    /* Optional: Makes the sample page fill the window. */
 
-      function initMap() {
-        
-        var src={lat: 41.122069, lng: 29.003988};
-        var dst={lat: 21.422485, lng: 39.826162};
-        var map = new google.maps.Map(document.getElementById('map'), {
-          zoom: 20,
-          center: src
-        });
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
 
-        var flightPlanCoordinates = [
-          src,dst
-        ];
+<body>
+  <div id="map"></div>
+  <script>
+    // This example creates a 2-pixel-wide red polyline showing the path of William
+    // Kingsford Smith's first trans-Pacific flight between Oakland, CA, and
+    // Brisbane, Australia.
+
+    function initMap() {
+
+      var src = { lat: 41.122069, lng: 29.003988 };
+      var dst = { lat: 21.422485, lng: 39.826162 };
+      var map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 20,
+        center: src,
+        mapTypeId: 'satellite'
+      });
+
+      var flightPlanCoordinates = [
+        src, dst
+      ];
+
+
+      //flightPath.setMap(map);
         var flightPath = new google.maps.Polyline({
           path: flightPlanCoordinates,
           strokeColor: '#f00',
           strokeOpacity: 2.0,
-          strokeWeight: 3
+          strokeWeight: 3,
+          fit:true
         });
 
+
+
+      map.addListener('center_changed', function () {
+        // 3 seconds after the center of the map has changed, pan back to the
+        // marker.
+        src.lat = map.getCenter().lat();
+        src.lng = map.getCenter().lng();
+        var newPoints = [dst, src];
+        flightPath.setPath(newPoints);
         flightPath.setMap(map);
-      }
-    </script>
-    <script async defer
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBaSr7uXyo1P6hLx34ByZqYZA2a5rfEVjI&callback=initMap">
-    </script>
-  </body>
+      });
+    }
+  </script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBaSr7uXyo1P6hLx34ByZqYZA2a5rfEVjI&callback=initMap">
+
+  </script>
+</body>
+
 </html>
